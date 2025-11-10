@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC World - WebSocket Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: monospace;
+            background: white;
+            border-left: 4px solid #667eea;
+        }
+        
+        .message.entity_update {
+            border-left-color: #28a745;
+        }
+        
+        .message.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .entity-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 16px;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 NPC World - WebSocket Client</h1>
+        
+        <div class="card">
+            <h2>Connection</h2>
+            <span id="status" class="status disconnected">Disconnected</span>
+            
+            <div class="input-group">
+                <input type="text" id="wsUrl" value="ws://localhost:3000/ws" placeholder="WebSocket URL">
+                <button id="connectBtn" onclick="connect()">Connect</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Subscribe to Entity</h2>
+            <div class="input-group">
+                <input type="number" id="entityId" placeholder="Entity ID (e.g., 1)" value="1">
+                <button id="subscribeBtn" onclick="subscribe()" disabled>Subscribe</button>
+                <button id="unsubscribeBtn" onclick="unsubscribe()" disabled>Unsubscribe</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Current Entity State</h2>
+            <div id="entityInfo">
+                <p style="color: #666; text-align: center;">Subscribe to an entity to see live updates</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Messages</h2>
+            <button onclick="clearMessages()" style="margin-bottom: 10px;">Clear Messages</button>
+            <div id="messages" class="messages">
+                <p style="color: #666; text-align: center;">No messages yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentEntityId = null;
+
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            const unsubscribeBtn = document.getElementById('unsubscribeBtn');
+            
+            if (connected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                subscribeBtn.disabled = false;
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                subscribeBtn.disabled = true;
+                unsubscribeBtn.disabled = true;
+            }
+        }
+
+        function addMessage(message, type = '') {
+            const messagesEl = document.getElementById('messages');
+            
+            if (messagesEl.children.length === 1 && messagesEl.children[0].tagName === 'P') {
+                messagesEl.innerHTML = '';
+            }
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message ' + type;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageEl.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function updateEntityInfo(data) {
+            const entityInfoEl = document.getElementById('entityInfo');
+            
+            entityInfoEl.innerHTML = `
+                <div class="entity-info">
+                    <div class="info-item">
+                        <div class="info-label">Entity ID</div>
+                        <div class="info-value">${data.id}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">${data.name}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Type</div>
+                        <div class="info-value">${data.entity_type}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Position</div>
+                        <div class="info-value">X: ${data.position_x?.toFixed(2)}, Y: ${data.position_y?.toFixed(2)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Health</div>
+                        <div class="info-value">${data.health}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Energy</div>
+                        <div class="info-value">${data.energy}</div>
+                    </div>
+                </div>
+                <h3 style="margin-top: 15px;">State</h3>
+                <pre>${JSON.stringify(data.state, null, 2)}</pre>
+            `;
+        }
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = () => {
+                    updateStatus(true);
+                    addMessage('Connected to WebSocket server');
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'entity_update') {
+                            addMessage(`Entity update received for ID ${data.entity_id}`, 'entity_update');
+                            updateEntityInfo(data.data);
+                        } else {
+                            addMessage(JSON.stringify(data, null, 2));
+                        }
+                    } catch (error) {
+                        addMessage(event.data);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    addMessage('WebSocket error occurred', 'error');
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onclose = () => {
+                    updateStatus(false);
+                    addMessage('Disconnected from WebSocket server');
+                    ws = null;
+                };
+            } catch (error) {
+                addMessage('Failed to connect: ' + error.message, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function subscribe() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('Not connected to WebSocket server', 'error');
+                return;
+            }
+            
+            const entityId = parseInt(document.getElementById('entityId').value);
+            
+            if (!entityId) {
+                addMessage('Please enter a valid entity ID', 'error');
+                return;
+            }
+            
+            currentEntityId = entityId;
+            ws.send(JSON.stringify({ action: 'subscribe', entity_id: entityId }));
+            
+            document.getElementById('unsubscribeBtn').disabled = false;
+            
+            fetch(`http://localhost:3000/entities/${entityId}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateEntityInfo(data);
+                    addMessage(`Fetched initial state for entity ${entityId}`);
+                })
+                .catch(error => {
+                    addMessage(`Failed to fetch entity data: ${error.message}`, 'error');
+                });
+        }
+
+        function unsubscribe() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('Not connected to WebSocket server', 'error');
+                return;
+            }
+            
+            ws.send(JSON.stringify({ action: 'unsubscribe' }));
+            currentEntityId = null;
+            
+            document.getElementById('unsubscribeBtn').disabled = true;
+            document.getElementById('entityInfo').innerHTML = '<p style="color: #666; text-align: center;">Subscribe to an entity to see live updates</p>';
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '<p style="color: #666; text-align: center;">No messages yet</p>';
+        }
+    </script>
+</body>
+</html>

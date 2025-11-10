@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: npcworld_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: npcworld
+      MYSQL_USER: npcworld
+      MYSQL_PASSWORD: npcworld_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - npcworld_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nodejs_api:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: npcworld_api
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=npcworld
+      - DB_PASSWORD=npcworld_password
+      - DB_NAME=npcworld
+      - API_PORT=3000
+      - WS_PORT=3001
+      - TICK_RATE_MS=1000
+      - WORLD_SEED=12345
+      - ADMIN_TOKEN=your_secure_admin_token_here
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+    networks:
+      - npcworld_network
+    restart: unless-stopped
+
+  php_web:
+    build:
+      context: .
+      dockerfile: Dockerfile.php
+    container_name: npcworld_php
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=npcworld
+      - DB_PASSWORD=npcworld_password
+      - DB_NAME=npcworld
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    volumes:
+      - ./public:/var/www/html
+    networks:
+      - npcworld_network
+    restart: unless-stopped
+
+networks:
+  npcworld_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
