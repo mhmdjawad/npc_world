@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC World - Home</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        
+        .description {
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            margin-top: 40px;
+            text-align: left;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .features ul {
+            list-style: none;
+        }
+        
+        .features li {
+            padding: 8px 0;
+            color: #666;
+        }
+        
+        .features li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 NPC World</h1>
+        <p class="subtitle">Deterministic Tick-Based Simulation</p>
+        
+        <p class="description">
+            Welcome to NPC World, a real-time simulation environment where NPCs live, interact, 
+            and evolve in a deterministic world. Watch entities move, observe their behaviors, 
+            and interact through our REST API and WebSocket connections.
+        </p>
+        
+        <div class="buttons">
+            <a href="register.php" class="btn btn-primary">Register Player</a>
+            <a href="client.html" class="btn btn-secondary">WebSocket Client</a>
+        </div>
+        
+        <div class="features">
+            <h3>Features</h3>
+            <ul>
+                <li>Deterministic tick-based simulation with seeded PRNG</li>
+                <li>Real-time entity tracking via WebSocket</li>
+                <li>REST API for world and entity management</li>
+                <li>MySQL database for persistent storage</li>
+                <li>Docker Compose for easy deployment</li>
+                <li>Player registration and entity assignment</li>
+                <li>Idea system for entity goals and behaviors</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
