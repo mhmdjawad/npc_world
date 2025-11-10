@@ -194,6 +194,12 @@
         let ws = null;
         let currentEntityId = null;
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function updateStatus(connected) {
             const statusEl = document.getElementById('status');
             const connectBtn = document.getElementById('connectBtn');
@@ -228,7 +234,7 @@
             messageEl.className = 'message ' + type;
             
             const timestamp = new Date().toLocaleTimeString();
-            messageEl.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            messageEl.innerHTML = `<strong>[${escapeHtml(timestamp)}]</strong> ${escapeHtml(message)}`;
             
             messagesEl.appendChild(messageEl);
             messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -241,31 +247,31 @@
                 <div class="entity-info">
                     <div class="info-item">
                         <div class="info-label">Entity ID</div>
-                        <div class="info-value">${data.id}</div>
+                        <div class="info-value">${escapeHtml(String(data.id))}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Name</div>
-                        <div class="info-value">${data.name}</div>
+                        <div class="info-value">${escapeHtml(data.name)}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Type</div>
-                        <div class="info-value">${data.entity_type}</div>
+                        <div class="info-value">${escapeHtml(data.entity_type)}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Position</div>
-                        <div class="info-value">X: ${data.position_x?.toFixed(2)}, Y: ${data.position_y?.toFixed(2)}</div>
+                        <div class="info-value">X: ${escapeHtml(String(data.position_x?.toFixed(2)))}, Y: ${escapeHtml(String(data.position_y?.toFixed(2)))}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Health</div>
-                        <div class="info-value">${data.health}</div>
+                        <div class="info-value">${escapeHtml(String(data.health))}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Energy</div>
-                        <div class="info-value">${data.energy}</div>
+                        <div class="info-value">${escapeHtml(String(data.energy))}</div>
                     </div>
                 </div>
                 <h3 style="margin-top: 15px;">State</h3>
-                <pre>${JSON.stringify(data.state, null, 2)}</pre>
+                <pre>${escapeHtml(JSON.stringify(data.state, null, 2))}</pre>
             `;
         }
 
